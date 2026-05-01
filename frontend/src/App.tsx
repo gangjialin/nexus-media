@@ -8,8 +8,7 @@ import { TasksPage } from "@/pages/TasksPage";
 import { LoginPage } from "@/pages/LoginPage";
 
 function App() {
-  // TODO: 替换为真实的认证状态
-  const isAuthenticated = false;
+  const isAuthenticated = !!localStorage.getItem("access_token");
 
   if (!isAuthenticated) {
     return (

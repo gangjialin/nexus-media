@@ -38,10 +38,15 @@ export interface Script {
   id: string;
   project_id: string;
   title: string;
+  author?: string;
   status: "draft" | "editing" | "reviewing" | "published";
   current_version: number;
   total_scenes: number;
-  created_at: string;
+  word_count: number;
+  raw_content?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Scene {
