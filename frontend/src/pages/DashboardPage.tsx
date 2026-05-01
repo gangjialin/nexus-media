@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/stores/authStore";
 import {
   TrendingUp,
   Clock,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
 } from "lucide-react";
 
 const stats = [
@@ -64,12 +64,29 @@ const typeStyles = {
 };
 
 export function DashboardPage() {
+  const { user } = useAuthStore();
+  const roleTitle = user?.role === "director" ? "总控台"
+    : user?.role === "lead" ? "组内看板"
+    : user?.role === "member" ? "我的任务"
+    : user?.role === "producer" ? "制片看板"
+    : "总控台";
+  const roleDesc = user?.role === "director" ? "全局项目进度与团队动态"
+    : user?.role === "lead" ? "本组任务进度与组员状态"
+    : user?.role === "member" ? "分配给我的任务"
+    : user?.role === "producer" ? "项目排期与资源监控"
+    : "";
+
   return (
     <div className="space-y-6 page-enter max-w-6xl">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">总控台</h1>
-        <p className="text-sm text-gray-500 mt-1">全局项目进度与团队动态</p>
+        <h1 className="text-2xl font-bold text-gray-900">{roleTitle}</h1>
+        <p className="text-sm text-gray-500 mt-1">{roleDesc}</p>
+        <Badge variant="secondary" className="mt-2 text-[10px]">
+          {user?.role === "director" ? "👤 导演视图" :
+           user?.role === "lead" ? "👤 组长视图" :
+           user?.role === "member" ? "👤 组员视图" :
+           user?.role === "producer" ? "👤 制片视图" : ""}
+        </Badge>
       </div>
 
       {/* Stats Grid */}

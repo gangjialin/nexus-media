@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useScriptStore } from "@/stores/scriptStore";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +38,9 @@ export function ScriptDetailPage() {
     createAnnotation,
     replyAnnotation,
     confirmAnnotation,
+    assignScene,
   } = useScriptStore();
+  const { user } = useAuthStore();
 
   const [activeScene, setActiveScene] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(false);
@@ -255,7 +258,7 @@ export function ScriptDetailPage() {
       {/* Main Content Area */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Scene Sidebar */}
-        <Card className="w-48 shrink-0 overflow-hidden border-0 shadow-sm">
+        <Card className="w-52 shrink-0 border-0 shadow-sm" style={{ overflow: "visible" }}>
           <div className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-50">
             场景列表
           </div>
@@ -264,22 +267,49 @@ export function ScriptDetailPage() {
               <p className="text-xs text-gray-300 text-center py-8">暂无场景</p>
             ) : (
               scenes.map((scene) => (
-                <button
-                  key={scene.id}
-                  onClick={() => scrollToScene(scene.id)}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                    activeScene === scene.id
-                      ? "bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-xs font-mono text-gray-400">
-                    S{scene.scene_number.padStart(2, "0")}
-                  </span>
-                  <span className="ml-2 text-xs truncate block">
-                    {scene.title || scene.location || `场景 ${scene.scene_number}`}
-                  </span>
-                </button>
+                <div key={scene.id}>
+                  <button
+                    onClick={() => scrollToScene(scene.id)}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                      activeScene === scene.id
+                        ? "bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className="text-xs font-mono text-gray-400">
+                      S{scene.scene_number.padStart(2, "0")}
+                    </span>
+                    <span className="ml-2 text-xs truncate block">
+                      {scene.title || scene.location || `场景 ${scene.scene_number}`}
+                    </span>
+                  </button>
+
+                  {/* Assign Button (Director Only) */}
+                  {scene.status === "pending" && user?.role === "director" && (
+                    <div className="px-3 pb-1">
+                      <select
+                        className="w-full text-[10px] border border-gray-200 rounded px-1.5 py-0.5 bg-white text-gray-500"
+                        defaultValue=""
+                        onChange={async (e) => {
+                          if (!e.target.value || !id) return;
+                          try {
+                            await assignScene(id, scene.id, e.target.value);
+                          } catch (err: any) {
+                            alert("分配失败: " + err.message);
+                          }
+                        }}
+                      >
+                        <option value="" disabled>分配给...</option>
+                        <option value="team-1">A组 - 动画组</option>
+                        <option value="team-2">B组 - 特效组</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {scene.status === "assigned" && (
+                    <p className="text-[10px] text-green-600 px-3 pb-1">✓ 已分配</p>
+                  )}
+                </div>
               ))
             )}
           </div>

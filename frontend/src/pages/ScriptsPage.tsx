@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useScriptStore } from "@/stores/scriptStore";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ const statusConfig: Record<string, { label: string; variant: "success" | "warnin
 
 export function ScriptsPage() {
   const { scripts, loading, error, fetchScripts, importScript } = useScriptStore();
+  const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,25 +60,25 @@ export function ScriptsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".md,.txt,.docx,.pdf"
-            className="hidden"
-            onChange={handleImport}
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Upload className="w-4 h-4" />
-            {uploading ? "导入中..." : "导入剧本"}
-          </Button>
-          <Button disabled>
-            <Plus className="w-4 h-4" />
-            新建
-          </Button>
+          {(user?.role === "director" || user?.role === "lead") && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".md,.txt,.docx,.pdf"
+                className="hidden"
+                onChange={handleImport}
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? "导入中..." : "导入剧本"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

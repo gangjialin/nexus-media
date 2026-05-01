@@ -52,8 +52,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, isAuthenticated: false });
   },
 
-  switchRole: (role) => {
-    localStorage.setItem("access_token", `dev-${role}`);
+  switchRole: (role, devToken?: string) => {
+    const token = devToken || `dev-${role}`;
+    localStorage.setItem("access_token", token);
     localStorage.setItem("dev_role", role);
     window.location.reload();
   },

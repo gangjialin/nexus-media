@@ -28,9 +28,21 @@ export function Sidebar() {
   const [collapsed] = useState(false);
   const { user, switchRole } = useAuthStore();
 
-  const roles: UserRole[] = ["director", "lead", "member", "producer"];
-  const roleLabel = user ? ROLE_NAMES[user.role] : "导演";
-  const initials = roleLabel.slice(0, 1);
+  const devRoles = [
+    { value: "dev-director", label: "👤 张导（导演）", role: "director" as UserRole },
+    { value: "dev-lead1", label: "👤 组长1（A组）", role: "lead" as UserRole },
+    { value: "dev-lead2", label: "👤 组长2（B组）", role: "lead" as UserRole },
+    { value: "dev-member11", label: "👤 组员1-1（A组）", role: "member" as UserRole },
+    { value: "dev-member12", label: "👤 组员1-2（A组）", role: "member" as UserRole },
+    { value: "dev-member21", label: "👤 组员2-1（B组）", role: "member" as UserRole },
+    { value: "dev-member22", label: "👤 组员2-2（B组）", role: "member" as UserRole },
+    { value: "dev-producer", label: "👤 赵制片", role: "producer" as UserRole },
+  ];
+
+  const currentRole = localStorage.getItem("dev_role") || user?.role || "director";
+  const currentToken = localStorage.getItem("access_token") || "dev-director";
+  const displayName = devRoles.find(r => r.value === currentToken)?.label.split(" ")[1] || "张导";
+  const initials = displayName.slice(0, 1);
 
   return (
     <aside
@@ -103,9 +115,12 @@ export function Sidebar() {
             </div>
             <Select
               className="h-7 text-xs"
-              value={user?.role || "director"}
-              onChange={(e) => switchRole(e.target.value as UserRole)}
-              options={roles.map((r) => ({ value: r, label: ROLE_NAMES[r] }))}
+              value={currentToken}
+              onChange={(e) => {
+                const selected = devRoles.find(r => r.value === e.target.value);
+                if (selected) switchRole(selected.role, selected.value);
+              }}
+              options={devRoles.map((r) => ({ value: r.value, label: r.label }))}
             />
           </div>
         )}

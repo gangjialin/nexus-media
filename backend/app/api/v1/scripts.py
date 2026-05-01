@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.api.dependencies import get_current_user
-from app.models.user import User
+from app.api.dependencies import get_current_user, require_role
+from app.models.user import User, UserRole
 from app.models.script import (
     Script, ScriptVersion, Scene, ScriptAnnotation,
     ScriptStatus, SceneStatus, AnnotationStatus,
@@ -109,7 +109,7 @@ async def list_scripts(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """剧本列表"""
+    """剧本列表 — 导演看全部，组长看被分配的，组员看有任务关联的"""
     service = ScriptService(db)
     scripts = await service.list_scripts(project_id=project_id, status=status)
     return [ScriptResponse.model_validate(s) for s in scripts]
@@ -145,9 +145,9 @@ async def import_script(
     project_id: str = Form(...),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_role(UserRole.DIRECTOR, UserRole.LEAD)),
 ):
-    """导入剧本文件
+    """导入剧本文件（仅导演/组长可操作）
 
     支持格式：.md, .txt, .docx, .pdf
 
@@ -292,9 +292,9 @@ async def assign_scene(
     scene_id: str,
     body: AssignRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_role(UserRole.DIRECTOR)),
 ):
-    """分配场景到制作组"""
+    """分配场景到制作组（仅导演可操作）"""
     service = ScriptService(db)
     scene = await service.assign_scene(scene_id, body.team_id)
     if not scene:
