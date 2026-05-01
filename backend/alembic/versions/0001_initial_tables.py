@@ -103,7 +103,7 @@ def upgrade() -> None:
         sa.Column("total_scenes", sa.Integer(), default=0),
         sa.Column("word_count", sa.Integer(), default=0),
         sa.Column("raw_content", sa.Text()),
-        sa.Column("metadata", postgresql.JSONB(), default=dict),
+        sa.Column("extra_data", postgresql.JSONB(), default=dict),
         sa.Column("created_by", sa.String(36)),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),

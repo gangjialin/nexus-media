@@ -49,6 +49,7 @@ export function ScriptDetailPage() {
   const [showCommentInput, setShowCommentInput] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -60,28 +61,31 @@ export function ScriptDetailPage() {
 
   // 文本选择处理
   const handleTextSelect = useCallback(() => {
+    // 如果已经有批注输入框打开，忽略新的选择
+    if (showCommentInput) return;
+
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-      setSelectionToolbar(null);
+      return;
+    }
+
+    // 如果点击发生在批注弹窗内，忽略
+    if (popupRef.current?.contains(selection.anchorNode?.parentElement)) {
       return;
     }
 
     const text = selection.toString().trim();
-    if (text.length > 500) return; // 限制选中长度
+    if (text.length > 500) return;
 
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
-    const container = contentRef.current;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
 
     setSelectionToolbar({
-      x: rect.left - containerRect.left + rect.width / 2,
-      y: rect.top - containerRect.top - 8,
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 4,
       text,
     });
-  }, []);
+  }, [showCommentInput]);
 
   // 关闭选择工具栏
   const clearSelection = useCallback(() => {
@@ -105,8 +109,15 @@ export function ScriptDetailPage() {
       setSelectionToolbar(null);
       window.getSelection()?.removeAllRanges();
     } catch (e) {
-      // handled by store
+      alert("批注提交失败: " + (e instanceof Error ? e.message : "未知错误"));
     }
+  };
+
+  // 场景点击跳转
+  const scrollToScene = (sceneId: string) => {
+    setActiveScene(sceneId);
+    const el = document.getElementById(`scene-${sceneId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // 渲染正文（高亮被批注的段落）
@@ -142,8 +153,17 @@ export function ScriptDetailPage() {
             className = "h-2";
           }
 
+          // 场景标题加锚点
+          let anchorId = "";
+          if (isSceneTitle) {
+            const sceneNum = para.match(/(\d+)/)?.[1];
+            if (sceneNum && scenes[parseInt(sceneNum) - 1]) {
+              anchorId = scenes[parseInt(sceneNum) - 1].id;
+            }
+          }
+
           return (
-            <p key={i} className={className}>
+            <p key={i} className={className} id={anchorId ? `scene-${anchorId}` : undefined}>
               {para || " "}
             </p>
           );
@@ -243,7 +263,7 @@ export function ScriptDetailPage() {
               scenes.map((scene) => (
                 <button
                   key={scene.id}
-                  onClick={() => setActiveScene(scene.id)}
+                  onClick={() => scrollToScene(scene.id)}
                   className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                     activeScene === scene.id
                       ? "bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500"
@@ -264,11 +284,12 @@ export function ScriptDetailPage() {
 
         {/* Script Content */}
         <Card
-          className="flex-1 overflow-hidden border-0 shadow-sm"
+          className="flex-1 border-0 shadow-sm"
+          style={{ overflow: "visible" }}
           ref={contentRef}
         >
           <div
-            className="h-full overflow-y-auto p-8 relative"
+            className="h-full overflow-y-auto p-8"
             onMouseUp={handleTextSelect}
           >
             {renderContent()}
@@ -276,16 +297,16 @@ export function ScriptDetailPage() {
             {/* 选中文字后的浮动工具栏 */}
             {selectionToolbar && !showCommentInput && (
               <div
-                className="absolute z-50 flex gap-1"
+                className="fixed z-50 flex gap-1"
                 style={{
                   left: selectionToolbar.x,
-                  top: selectionToolbar.y,
-                  transform: "translate(-50%, -100%)",
+                  top: selectionToolbar.y - 36,
+                  transform: "translateX(-50%)",
                 }}
               >
                 <Button
                   size="sm"
-                  className="h-7 text-xs shadow-lg"
+                  className="h-7 text-xs shadow-lg bg-white text-gray-700 border hover:bg-gray-50"
                   onClick={() => setShowCommentInput(true)}
                 >
                   <MessageSquare className="w-3 h-3" />
@@ -294,7 +315,7 @@ export function ScriptDetailPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 shadow-lg"
+                  className="h-7 w-7 p-0 shadow-lg bg-white"
                   onClick={clearSelection}
                 >
                   <X className="w-3 h-3" />
@@ -305,14 +326,16 @@ export function ScriptDetailPage() {
             {/* 批注输入框 */}
             {showCommentInput && selectionToolbar && (
               <div
-                className="absolute z-50 w-80"
+                ref={popupRef}
+                className="fixed z-50 w-80"
                 style={{
-                  left: selectionToolbar.x,
-                  top: selectionToolbar.y,
-                  transform: "translate(-50%, -100%)",
+                  left: Math.min(selectionToolbar.x - 160, window.innerWidth - 340),
+                  top: Math.max(selectionToolbar.y - 200, 60),
                 }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
               >
-                <Card className="shadow-lg border-0 p-3 space-y-2">
+                <Card className="shadow-xl border-2 border-indigo-200 p-3 space-y-2">
                   <div className="flex items-start gap-2">
                     <Quote className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <p className="text-xs text-gray-500 italic leading-relaxed line-clamp-2">
@@ -325,6 +348,7 @@ export function ScriptDetailPage() {
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
                     autoFocus
+                    onMouseDown={(e) => e.stopPropagation()}
                   />
                   <div className="flex justify-end gap-2">
                     <Button

@@ -85,12 +85,12 @@ class AnnotationCreate(BaseModel):
 class AnnotationResponse(BaseModel):
     id: str
     content: str
-    quote_text: Optional[str]
+    quote_text: Optional[str] = None
     status: str
     author_id: str
-    assignee_id: Optional[str]
-    scene_id: Optional[str]
-    created_at: Optional[str]
+    assignee_id: Optional[str] = None
+    scene_id: Optional[str] = None
+    created_at: Optional[str] = None
 
     class Config:
         from_attributes = True

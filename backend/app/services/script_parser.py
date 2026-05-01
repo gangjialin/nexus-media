@@ -89,9 +89,27 @@ class ScriptParser:
 
         current_scene: ParsedScene | None = None
 
-        for line in lines:
-            line = line.rstrip()
+        def save_scene():
+            """保存当前场景并开启新场景"""
+            nonlocal current_scene
+            if current_scene is not None:
+                script.scenes.append(current_scene)
+                current_scene = None
 
+        def is_scene_title(line: str) -> bool:
+            """判断是否为场景标题行"""
+            # ## 第N场 ...
+            if re.match(r"^#{1,3}\s*第?\s*\d+\s*场", line):
+                return True
+            # ## S01 ...
+            if re.match(r"^#{1,3}\s*[Ss]?\d+[：:\s]", line):
+                return True
+            # --- 分隔线 也算场景分隔
+            if re.match(r"^---+", line.strip()):
+                return True
+            return False
+
+        for line in lines:
             # 跳过空行
             if not line.strip():
                 continue
@@ -102,36 +120,29 @@ class ScriptParser:
                 script.author = author_match.group(1).strip()
                 continue
 
-            # 场景标题：## 第N场 内景/外景 地点 时间
-            scene_match = re.match(
-                r"^#{1,3}\s*第?\s*(\d+)\s*场[：:]*\s*(内景|外景|室内|室外)?\s*(.+?)?\s*(日|夜|黄昏|晨|傍晚)?\s*$",
-                line
-            )
-            if scene_match and current_scene is None:
-                current_scene = ParsedScene()
-                current_scene.scene_number = scene_match.group(1)
-                current_scene.location_type = scene_match.group(2) or ""
-                current_scene.location = scene_match.group(3) or ""
-                current_scene.time_of_day = scene_match.group(4) or ""
+            # 检测场景分隔线
+            if re.match(r"^---+$", line.strip()):
+                save_scene()
                 continue
 
-            # 简化场景匹配：## S01 火车站
-            alt_scene_match = re.match(r"^#{1,3}\s*(?:第?\d+场\s*)?[S|s]?(\d+)[：:\s]+(.+)", line)
-            if alt_scene_match and current_scene is None:
+            # 检测新场景标题
+            if is_scene_title(line):
+                save_scene()
                 current_scene = ParsedScene()
-                current_scene.scene_number = alt_scene_match.group(1)
-                current_scene.title = alt_scene_match.group(2).strip()
-                continue
-
-            # 更宽松的场景匹配
-            if line.strip().startswith("## ") and current_scene is None:
-                current_scene = ParsedScene()
-                remaining = line.strip()[3:].strip()
-                # 尝试提取数字
-                num_match = re.match(r"(\d+)", remaining)
-                if num_match:
-                    current_scene.scene_number = num_match.group(1)
-                current_scene.title = remaining
+                # 尝试提取场景信息
+                scene_info = re.match(
+                    r"^#{1,3}\s*第?\s*(\d+)\s*场[：:]*\s*(内景|外景|室内|室外)?\s*(.+?)?\s*(日|夜|黄昏|晨|傍晚)?\s*$",
+                    line
+                )
+                if not scene_info:
+                    scene_info = re.match(r"^#{1,3}\s*[Ss]?(\d+)[：:\s]+(.+)", line)
+                if scene_info:
+                    if len(scene_info.groups()) >= 1 and scene_info.group(1):
+                        current_scene.scene_number = scene_info.group(1)
+                    if len(scene_info.groups()) >= 3 and scene_info.group(3):
+                        current_scene.title = scene_info.group(3).strip()
+                    if len(scene_info.groups()) >= 4 and scene_info.group(4):
+                        current_scene.time_of_day = scene_info.group(4)
                 continue
 
             # 累积到当前场景内容
@@ -139,14 +150,10 @@ class ScriptParser:
                 current_scene.content += line + "\n"
 
                 # 提取角色名: 【角色A】 或 角色A：
-                char_match = re.findall(r"【(.+?)】|(\S+)[：:]", line)
-                for match in char_match:
-                    char_name = match[0] or match[1]
+                char_match = re.findall(r"【(.+?)】", line)
+                for char_name in char_match:
                     if char_name and char_name not in current_scene.characters:
                         current_scene.characters.append(char_name)
-
-            # 下一个场景开始 → 保存当前场景
-            # (场景结束时由下一场景标题触发，在循环顶部处理)
 
         # 如果有未关闭的场景
         if current_scene is not None:

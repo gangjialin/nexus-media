@@ -47,7 +47,7 @@ class Script(UUIDMixin, TimestampMixin, Base):
     total_scenes: Mapped[int] = mapped_column(Integer, default=0)
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     raw_content: Mapped[str | None] = mapped_column(Text)
-    metadata: Mapped[dict] = mapped_column(JSONB, default=dict)
+    extra_data: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[str | None] = mapped_column(String(36))
 
 

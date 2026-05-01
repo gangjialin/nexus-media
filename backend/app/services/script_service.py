@@ -17,13 +17,14 @@ class ScriptService:
 
     # ==================== 剧本 CRUD ====================
 
-    async def create_script(self, project_id: str, title: str, content: str, created_by: str) -> Script:
+    async def create_script(self, project_id: str, title: str, content: str, created_by: str, author: Optional[str] = None) -> Script:
         """创建剧本"""
         script = Script(
             project_id=project_id,
             title=title,
             raw_content=content,
             created_by=created_by,
+            author=author,
         )
         self.db.add(script)
         await self.db.flush()
