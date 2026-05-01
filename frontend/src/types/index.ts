@@ -60,11 +60,16 @@ export interface Scene {
 
 export interface ScriptAnnotation {
   id: string;
+  script_id: string;
   content: string;
+  quote_text?: string;
   status: "pending" | "in_progress" | "resolved" | "confirmed";
   author_id: string;
   assignee_id?: string;
-  created_at: string;
+  scene_id?: string;
+  parent_id?: string;
+  created_at?: string;
+  replies?: ScriptAnnotation[];
 }
 
 // ==================== 素材 ====================

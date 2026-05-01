@@ -5,13 +5,16 @@ import {
   FolderOpen,
   MessageSquare,
   CheckSquare,
-  ChevronLeft,
   LogOut,
+  UserCog,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { useState } from "react";
+import { useAuthStore, ROLE_NAMES } from "@/stores/authStore";
+import type { UserRole } from "@/types";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "总控台" },
@@ -22,7 +25,12 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed] = useState(false);
+  const { user, switchRole } = useAuthStore();
+
+  const roles: UserRole[] = ["director", "lead", "member", "producer"];
+  const roleLabel = user ? ROLE_NAMES[user.role] : "导演";
+  const initials = roleLabel.slice(0, 1);
 
   return (
     <aside
@@ -74,23 +82,41 @@ export function Sidebar() {
       <div className="px-2 py-3 border-t border-gray-100">
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="w-7 h-7">
-            <AvatarFallback>张</AvatarFallback>
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-900 truncate">
-                张导
+                {roleLabel}
               </p>
-              <p className="text-[10px] text-gray-400 truncate">导演</p>
+              <p className="text-[10px] text-gray-400 truncate">{user?.role}</p>
             </div>
           )}
         </div>
+
+        {/* Role Switcher (Dev Mode) */}
+        {!collapsed && (
+          <div className="px-3 pb-2">
+            <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-1">
+              <UserCog className="w-3 h-3" />
+              切换角色
+            </div>
+            <Select
+              className="h-7 text-xs"
+              value={user?.role || "director"}
+              onChange={(e) => switchRole(e.target.value as UserRole)}
+              options={roles.map((r) => ({ value: r, label: ROLE_NAMES[r] }))}
+            />
+          </div>
+        )}
+
         <Button
           variant="ghost"
           size="sm"
           className="w-full justify-start text-gray-400 hover:text-gray-600 mt-1"
           onClick={() => {
             localStorage.removeItem("access_token");
+            localStorage.removeItem("dev_role");
             window.location.reload();
           }}
         >

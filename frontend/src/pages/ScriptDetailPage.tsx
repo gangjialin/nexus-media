@@ -35,11 +35,14 @@ export function ScriptDetailPage() {
     fetchScenes,
     fetchAnnotations,
     createAnnotation,
-    updateAnnotation,
+    replyAnnotation,
+    confirmAnnotation,
   } = useScriptStore();
 
   const [activeScene, setActiveScene] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [selectionToolbar, setSelectionToolbar] = useState<{
     x: number;
     y: number;
@@ -375,7 +378,7 @@ export function ScriptDetailPage() {
 
         {/* Annotations Panel */}
         {showAnnotations && (
-          <Card className="w-80 shrink-0 overflow-hidden border-0 shadow-sm">
+          <Card className="w-80 shrink-0 border-0 shadow-sm" style={{ overflow: "visible" }}>
             <div className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-50 flex items-center justify-between">
               <span>批注列表</span>
               <Badge variant="secondary" className="text-[10px]">
@@ -395,8 +398,9 @@ export function ScriptDetailPage() {
                 <div className="divide-y divide-gray-50">
                   {annotations.map((ann) => {
                     const cfg = statusConfig[ann.status] || statusConfig.pending;
+                    const isConfirmed = ann.status === "confirmed";
                     return (
-                      <div key={ann.id} className="p-3 space-y-2 hover:bg-gray-50/50">
+                      <div key={ann.id} className={`p-3 space-y-2 ${isConfirmed ? "opacity-60" : ""}`}>
                         <div className="flex items-center justify-between">
                           <Badge variant={cfg.variant} className="text-[10px]">
                             {cfg.label}
@@ -410,31 +414,98 @@ export function ScriptDetailPage() {
                             "{ann.quote_text}"
                           </p>
                         )}
-                        <p className="text-xs text-gray-700 leading-relaxed">
-                          {ann.content}
-                        </p>
-                        <div className="flex gap-1 pt-1">
-                          {ann.status === "pending" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] text-indigo-600"
-                              onClick={() => updateAnnotation(ann.id, "resolved")}
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              标记完成
-                            </Button>
+                        <p className="text-xs text-gray-700 leading-relaxed">{ann.content}</p>
+
+                        {/* Replies */}
+                        {ann.replies && ann.replies.map((reply) => (
+                          <div key={reply.id} className="ml-3 pl-3 border-l-2 border-indigo-200 space-y-1">
+                            <p className="text-xs text-gray-600">{reply.content}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={statusConfig[reply.status]?.variant || "secondary"} className="text-[9px]">
+                                {statusConfig[reply.status]?.label}
+                              </Badge>
+                              <span className="text-[9px] text-gray-300">{reply.created_at?.slice(0, 10)}</span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Actions */}
+                        <div className="flex gap-1 pt-1 flex-wrap">
+                          {ann.status !== "confirmed" && (
+                            <>
+                              {/* Reply button (lead/director) */}
+                              {replyingTo !== ann.id ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-[10px] text-indigo-600"
+                                  onClick={() => setReplyingTo(ann.id)}
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                  回复
+                                </Button>
+                              ) : (
+                                <div className="w-full space-y-1">
+                                  <textarea
+                                    className="w-full text-xs border border-gray-200 rounded p-1.5 h-14 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    placeholder="输入回复..."
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    autoFocus
+                                  />
+                                  <div className="flex justify-end gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 text-[10px]"
+                                      onClick={() => { setReplyingTo(null); setReplyText(""); }}
+                                    >
+                                      取消
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="h-5 text-[10px]"
+                                      disabled={!replyText.trim()}
+                                      onClick={async () => {
+                                        if (!replyText.trim()) return;
+                                        try {
+                                          await replyAnnotation(ann.id, replyText);
+                                          setReplyingTo(null);
+                                          setReplyText("");
+                                        } catch (e: any) {
+                                          alert("回复失败: " + e.message);
+                                        }
+                                      }}
+                                    >
+                                      <Send className="w-2.5 h-2.5" />
+                                      回复
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Confirm button (member) */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] text-green-600"
+                                onClick={async () => {
+                                  try {
+                                    await confirmAnnotation(ann.id);
+                                  } catch (e: any) {
+                                    alert("确认失败: " + e.message);
+                                  }
+                                }}
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                确认理解
+                              </Button>
+                            </>
                           )}
-                          {ann.status === "resolved" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] text-green-600"
-                              onClick={() => updateAnnotation(ann.id, "confirmed")}
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              确认通过
-                            </Button>
+                          {isConfirmed && (
+                            <span className="text-[10px] text-green-600 font-medium">
+                              ✓ 已确认
+                            </span>
                           )}
                         </div>
                       </div>

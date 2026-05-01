@@ -15,7 +15,13 @@ from app.models.user import User, UserRole
 
 security = HTTPBearer(auto_error=False)
 
-DEV_USER_ID = "00000000-0000-4000-8000-000000000001"
+DEV_USERS = {
+    "dev": {"id": "00000000-0000-4000-8000-000000000001", "name": "开发用户", "role": UserRole.DIRECTOR},
+    "dev-director": {"id": "00000000-0000-4000-8000-000000000001", "name": "张导", "role": UserRole.DIRECTOR},
+    "dev-lead": {"id": "00000000-0000-4000-8000-000000000002", "name": "李组长", "role": UserRole.LEAD},
+    "dev-member": {"id": "00000000-0000-4000-8000-000000000003", "name": "小王", "role": UserRole.MEMBER},
+    "dev-producer": {"id": "00000000-0000-4000-8000-000000000004", "name": "赵制片", "role": UserRole.PRODUCER},
+}
 
 
 async def get_current_user(
@@ -25,19 +31,22 @@ async def get_current_user(
     """获取当前登录用户
 
     开发模式：无 token 时返回一个虚拟导演用户。
+    支持 dev-{role} 格式的 token 切换角色。
     生产模式：必须有效 JWT token。
     """
     # 开发模式
-    if credentials is None or credentials.credentials == "dev":
-        result = await db.execute(select(User).where(User.id == DEV_USER_ID))
+    token = credentials.credentials if credentials else None
+    dev_info = DEV_USERS.get(token or "", DEV_USERS.get("dev")) if token and token.startswith("dev") else (DEV_USERS.get("dev") if not token else None)
+
+    if dev_info:
+        result = await db.execute(select(User).where(User.id == dev_info["id"]))
         user = result.scalar_one_or_none()
         if user is None:
-            # 创建虚拟用户
             user = User(
-                id=DEV_USER_ID,
-                email="dev@nexus-media.local",
-                display_name="开发用户",
-                role=UserRole.DIRECTOR,
+                id=dev_info["id"],
+                email=f"{dev_info['name']}@nexus.local",
+                display_name=dev_info["name"],
+                role=dev_info["role"],
                 password_hash="dev",
             )
             db.add(user)

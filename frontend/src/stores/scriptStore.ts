@@ -24,7 +24,9 @@ interface ScriptState {
     assignee_id?: string;
     quote_text?: string;
   }) => Promise<void>;
-  updateAnnotation: (annotationId: string, status: string) => Promise<void>;
+  replyAnnotation: (annotationId: string, content: string) => Promise<void>;
+  confirmAnnotation: (annotationId: string) => Promise<void>;
+  assignScene: (scriptId: string, sceneId: string, teamId: string) => Promise<void>;
 }
 
 export const useScriptStore = create<ScriptState>((set, get) => ({
@@ -95,8 +97,10 @@ export const useScriptStore = create<ScriptState>((set, get) => ({
 
   fetchAnnotations: async (scriptId, sceneId) => {
     try {
-      const data = await api.get<ScriptAnnotation[]>(`/scripts/${scriptId}/annotations`, {
-        scene_id: sceneId,
+      // Use threaded annotations endpoint
+      const data = await api.get<ScriptAnnotation[]>(`/annotations`, {
+        script_id: scriptId,
+        scene_id: sceneId || "",
       });
       set({ annotations: data });
     } catch (e: any) {
@@ -107,7 +111,6 @@ export const useScriptStore = create<ScriptState>((set, get) => ({
   createAnnotation: async (scriptId, data) => {
     try {
       await api.post(`/scripts/${scriptId}/annotations`, data);
-      // 刷新批注列表
       await get().fetchAnnotations(scriptId);
     } catch (e: any) {
       set({ error: e.message });
@@ -115,16 +118,35 @@ export const useScriptStore = create<ScriptState>((set, get) => ({
     }
   },
 
-  updateAnnotation: async (annotationId, status) => {
+  replyAnnotation: async (annotationId, content) => {
     try {
-      await api.put(`/scripts/annotations/${annotationId}`, { status } as any);
-      // 刷新当前剧本的批注
+      await api.post(`/annotations/${annotationId}/reply`, { content });
       const { currentScript } = get();
-      if (currentScript) {
-        await get().fetchAnnotations(currentScript.id);
-      }
+      if (currentScript) await get().fetchAnnotations(currentScript.id);
     } catch (e: any) {
       set({ error: e.message });
+      throw e;
+    }
+  },
+
+  confirmAnnotation: async (annotationId) => {
+    try {
+      await api.post(`/annotations/${annotationId}/confirm`, {});
+      const { currentScript } = get();
+      if (currentScript) await get().fetchAnnotations(currentScript.id);
+    } catch (e: any) {
+      set({ error: e.message });
+      throw e;
+    }
+  },
+
+  assignScene: async (scriptId, sceneId, teamId) => {
+    try {
+      await api.post(`/scripts/${scriptId}/scenes/${sceneId}/assign`, { team_id: teamId });
+      await get().fetchScenes(scriptId);
+    } catch (e: any) {
+      set({ error: e.message });
+      throw e;
     }
   },
 }));
