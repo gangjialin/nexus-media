@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Node
+node_modules/
+dist/
+.next/
+.vite/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Media / Storage (keep structure, ignore files)
+dev-storage/assets/*
+!dev-storage/assets/.gitkeep
+dev-storage/proxies/*
+!dev-storage/proxies/.gitkeep
+dev-storage/thumbnails/*
+!dev-storage/thumbnails/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Uploads (temp)
+uploads/
+tmp/
+
+# Coverage / Reports
+htmlcov/
+.coverage
+coverage/
+reports/
+
+# Database
+*.sqlite3
