@@ -1,7 +1,8 @@
 """用户与团队模型"""
 
-from sqlalchemy import Column, String, Boolean, Enum as SAEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Boolean, Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
 from app.core.database import Base
@@ -30,7 +31,7 @@ class User(UUIDMixin, TimestampMixin, Base):
         default=UserRole.MEMBER,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    preferences: Mapped[dict] = mapped_column(default=dict)
+    preferences: Mapped[dict] = mapped_column(JSONB, default=dict)
 
 
 class Team(UUIDMixin, TimestampMixin, Base):

@@ -1,6 +1,7 @@
 """素材模型"""
 
 from sqlalchemy import String, Text, Integer, BigInteger, Enum as SAEnum, Boolean
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -63,8 +64,8 @@ class Asset(UUIDMixin, TimestampMixin, Base):
         SAEnum(AssetStatus, name="asset_status", create_constraint=True),
         default=AssetStatus.UPLOADING,
     )
-    tech_metadata: Mapped[dict] = mapped_column(default=dict)
-    thumbnail_paths: Mapped[list] = mapped_column(default=list)
+    tech_metadata: Mapped[dict] = mapped_column(JSONB, default=dict)
+    thumbnail_paths: Mapped[list] = mapped_column(JSONB, default=list)
     proxy_status: Mapped[ProxyStatus] = mapped_column(
         SAEnum(ProxyStatus, name="proxy_status", create_constraint=True),
         default=ProxyStatus.NONE,
@@ -74,7 +75,7 @@ class Asset(UUIDMixin, TimestampMixin, Base):
         SAEnum(AIStatus, name="ai_status", create_constraint=True),
         default=AIStatus.NONE,
     )
-    ai_tags: Mapped[list] = mapped_column(default=list)
+    ai_tags: Mapped[list] = mapped_column(JSONB, default=list)
     version_group: Mapped[str | None] = mapped_column(String(36))
     version_number: Mapped[int] = mapped_column(default=1)
     is_latest: Mapped[bool] = mapped_column(Boolean, default=True)

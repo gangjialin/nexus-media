@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useScriptStore } from "@/stores/scriptStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,37 +149,36 @@ export function ScriptsPage() {
           {filteredScripts.map((script) => {
             const cfg = statusConfig[script.status] || { label: script.status, variant: "secondary" as const };
             return (
-              <Card
-                key={script.id}
-                className="border-0 shadow-sm hover:shadow-md cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5 text-indigo-500" />
+              <Link key={script.id} to={`/scripts/${script.id}`}>
+                <Card className="border-0 shadow-sm hover:shadow-md cursor-pointer transition-all duration-200 hover:-translate-y-0.5">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5 text-indigo-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-gray-900 truncate">
+                            {script.title}
+                          </h3>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            v{script.current_version}
+                            {" · "}{script.total_scenes} 场
+                            {" · "}{script.word_count?.toLocaleString() || 0} 字
+                            {script.author ? ` · ${script.author}` : ""}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">
-                          {script.title}
-                        </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          v{script.current_version}
-                          {" · "}{script.total_scenes} 场
-                          {" · "}{script.word_count?.toLocaleString() || 0} 字
-                          {script.author ? ` · ${script.author}` : ""}
-                        </p>
+                      <div className="flex items-center gap-3 ml-4">
+                        <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                        <span className="text-xs text-gray-300">
+                          {script.updated_at?.slice(0, 10) || script.created_at?.slice(0, 10)}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 ml-4">
-                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                      <span className="text-xs text-gray-300">
-                        {script.updated_at?.slice(0, 10) || script.created_at?.slice(0, 10)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

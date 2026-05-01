@@ -1,6 +1,7 @@
 """审阅相关模型"""
 
 from sqlalchemy import String, Text, Integer, Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -46,9 +47,9 @@ class ReviewComment(UUIDMixin, TimestampMixin, Base):
     author_id: Mapped[str] = mapped_column(String(36), nullable=False)
     assignee_id: Mapped[str | None] = mapped_column(String(36))
     timestamp_ms: Mapped[int | None] = mapped_column(Integer)
-    bbox: Mapped[dict | None] = mapped_column(default=dict)
+    bbox: Mapped[dict | None] = mapped_column(JSONB, default=dict)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    attachments: Mapped[list] = mapped_column(default=list)
+    attachments: Mapped[list] = mapped_column(JSONB, default=list)
     status: Mapped[CommentStatus] = mapped_column(
         SAEnum(CommentStatus, name="comment_status", create_constraint=True),
         default=CommentStatus.PENDING,

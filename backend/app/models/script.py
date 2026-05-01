@@ -1,6 +1,7 @@
 """剧本、场景、版本、批注模型"""
 
 from sqlalchemy import String, Text, Integer, Enum as SAEnum, Boolean
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -46,7 +47,7 @@ class Script(UUIDMixin, TimestampMixin, Base):
     total_scenes: Mapped[int] = mapped_column(Integer, default=0)
     word_count: Mapped[int] = mapped_column(Integer, default=0)
     raw_content: Mapped[str | None] = mapped_column(Text)
-    metadata: Mapped[dict] = mapped_column(default=dict)
+    metadata: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[str | None] = mapped_column(String(36))
 
 

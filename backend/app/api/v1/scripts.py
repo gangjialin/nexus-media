@@ -347,3 +347,39 @@ async def create_annotation(
         assignee_id=annotation.assignee_id,
         scene_id=annotation.scene_id,
     )
+
+
+class AnnotationStatusUpdate(BaseModel):
+    status: str
+
+
+@router.put("/annotations/{annotation_id}")
+async def update_annotation_status(
+    annotation_id: str,
+    body: AnnotationStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """更新批注状态"""
+    result = await db.execute(
+        select(ScriptAnnotation).where(ScriptAnnotation.id == annotation_id)
+    )
+    annotation = result.scalar_one_or_none()
+    if not annotation:
+        raise HTTPException(status_code=404, detail="批注不存在")
+
+    try:
+        annotation.status = AnnotationStatus(body.status)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"无效状态: {body.status}")
+
+    await db.commit()
+    return AnnotationResponse(
+        id=annotation.id,
+        content=annotation.content,
+        quote_text=annotation.quote_text,
+        status=annotation.status.value,
+        author_id=annotation.author_id,
+        assignee_id=annotation.assignee_id,
+        scene_id=annotation.scene_id,
+    )

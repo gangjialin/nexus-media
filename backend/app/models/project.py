@@ -1,6 +1,7 @@
 """项目模型"""
 
 from sqlalchemy import String, Date, Column, Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 
@@ -28,7 +29,7 @@ class Project(UUIDMixin, TimestampMixin, Base):
     start_date: Mapped[str | None] = mapped_column(Date)
     target_date: Mapped[str | None] = mapped_column(Date)
     cover_url: Mapped[str | None] = mapped_column(String(500))
-    settings: Mapped[dict] = mapped_column(default=dict)
+    settings: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[str | None] = mapped_column(String(36))
 
 
